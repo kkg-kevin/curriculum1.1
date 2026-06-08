@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { X, CheckCircle2, ChevronDown, School, BookOpen, Info, Search, ChevronRight } from "lucide-react";
 
-type Screen = "management" | "create" | "structure" | "settings" | "deploy" | "version-control";
+type Screen = "management" | "create" | "structure" | "settings" | "deploy" | "version-control" | "library";
 
 interface Props {
   onNavigate: (screen: Screen) => void;

@@ -19,7 +19,7 @@ import {
 import { getCyclePeriods, getCycleSummary, type CurriculumCycleConfig } from "../lib/curriculumCycle";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "./ui/dialog";
 
-type Screen = "management" | "create" | "structure" | "settings" | "deploy" | "version-control";
+type Screen = "management" | "create" | "structure" | "settings" | "deploy" | "version-control" | "library";
 
 interface Props {
   onNavigate: (screen: Screen) => void;
