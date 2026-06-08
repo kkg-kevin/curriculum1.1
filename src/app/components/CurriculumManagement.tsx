@@ -1,6 +1,6 @@
 import { BookOpen, School, Puzzle, Users, TrendingUp, ArrowRight, Plus, ChevronRight, CheckCircle2, Clock, AlertCircle } from "lucide-react";
 
-type Screen = "management" | "create" | "structure" | "settings" | "deploy" | "version-control";
+type Screen = "management" | "create" | "structure" | "settings" | "deploy" | "version-control" | "library";
 
 interface Props {
   onNavigate: (screen: Screen) => void;
@@ -29,7 +29,10 @@ export function CurriculumManagement({ onNavigate }: Props) {
             <p className="text-gray-500 text-sm mt-0.5">Design, deploy, and track learning journeys across all schools</p>
           </div>
           <div className="flex gap-3">
-            <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 bg-white hover:bg-gray-50">
+            <button 
+              onClick={() => onNavigate("library")}
+              className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 bg-white hover:bg-gray-50"
+            >
               <BookOpen size={15} />
               Curriculum Library
             </button>

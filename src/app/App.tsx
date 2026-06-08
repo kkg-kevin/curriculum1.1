@@ -7,9 +7,10 @@ import { CurriculumStructure } from "./components/CurriculumStructure";
 import { CurriculumSettings } from "./components/CurriculumSettings";
 import { DeploySupplementary } from "./components/DeploySupplementary";
 import { VersionControl } from "./components/VersionControl";
+import { CurriculumLibrary } from "./components/CurriculumLibrary";
 import { defaultCurriculumCycle, type CurriculumCycleConfig } from "./lib/curriculumCycle";
 
-type Screen = "management" | "create" | "structure" | "settings" | "deploy" | "version-control";
+type Screen = "management" | "create" | "structure" | "settings" | "deploy" | "version-control" | "library";
 
 const breadcrumbMap: Record<Screen, Array<{ label: string; active?: boolean }>> = {
   management: [
@@ -39,6 +40,10 @@ const breadcrumbMap: Record<Screen, Array<{ label: string; active?: boolean }>> 
     { label: "Settings" },
     { label: "Version Control", active: true },
   ],
+  library: [
+    { label: "Curriculum" },
+    { label: "Curriculum Library", active: true },
+  ],
 };
 
 export default function App() {
@@ -55,6 +60,7 @@ export default function App() {
         <div className="flex items-center gap-2 px-6 py-2 bg-white border-b border-gray-100 text-xs overflow-x-auto flex-shrink-0">
           {([
             { id: "management", label: "Curriculum Management" },
+            { id: "library", label: "Curriculum Library" },
             { id: "create", label: "Create New Curriculum" },
             { id: "structure", label: "Curriculum Structure" },
             { id: "settings", label: "Curriculum Settings" },
@@ -76,6 +82,7 @@ export default function App() {
         </div>
 
         {screen === "management" && <CurriculumManagement onNavigate={setScreen} />}
+        {screen === "library" && <CurriculumLibrary onNavigate={setScreen} />}
         {screen === "create" && (
           <CreateCurriculum
             onNavigate={setScreen}
