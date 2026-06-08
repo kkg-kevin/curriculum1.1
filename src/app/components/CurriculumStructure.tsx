@@ -15,9 +15,9 @@ import {
   BarChart3,
   Map,
   Clock,
-  X,
 } from "lucide-react";
 import { getCyclePeriods, getCycleSummary, type CurriculumCycleConfig } from "../lib/curriculumCycle";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "./ui/dialog";
 
 type Screen = "management" | "create" | "structure" | "settings" | "deploy" | "version-control";
 
@@ -131,6 +131,8 @@ export function CurriculumStructure({ onNavigate, cycleConfig }: Props) {
   const [classDraftName, setClassDraftName] = useState("");
   const [courseDraftTarget, setCourseDraftTarget] = useState<{ periodIndex: number; classIndex: number } | null>(null);
   const [courseDraftName, setCourseDraftName] = useState("");
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [isSimplePreviewOpen, setIsSimplePreviewOpen] = useState(false);
 
   useEffect(() => {
     setStructure((previous) => syncStructureToPeriods(previous, periods));
@@ -200,6 +202,7 @@ export function CurriculumStructure({ onNavigate, cycleConfig }: Props) {
     setCourseDraftTarget({ periodIndex, classIndex });
     setCourseDraftName("");
     setClassDraftPeriodIndex(null);
+    setOpenClassKey(`${periodIndex}:${classIndex}`);
   };
 
   const addCourse = () => {
@@ -263,17 +266,12 @@ export function CurriculumStructure({ onNavigate, cycleConfig }: Props) {
               <Settings size={14} />
               Curriculum Settings
             </button>
-            <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 bg-white hover:bg-gray-50">
+            <button
+              onClick={() => setIsSimplePreviewOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 bg-white hover:bg-gray-50"
+            >
               <Eye size={14} />
               Preview Curriculum
-            </button>
-            <button
-              onClick={() => beginAddClass(expandedPeriodIndex)}
-              className="flex items-center gap-2 px-4 py-2 bg-[#1a4db5] text-white rounded-lg text-sm hover:bg-blue-700"
-            >
-              <Plus size={14} />
-              Add Class
-              <ChevronDown size={14} />
             </button>
           </div>
         </div>
@@ -360,7 +358,6 @@ export function CurriculumStructure({ onNavigate, cycleConfig }: Props) {
               {periods.map((period, periodIndex) => {
                 const periodNode = structure[periodIndex];
                 const classCount = periodNode?.classes.length ?? 0;
-                const periodCourseCount = periodNode?.classes.reduce((total, classNode) => total + classNode.courses.length, 0) ?? 0;
 
                 return (
                   <div key={period} className="ml-3">
@@ -382,7 +379,7 @@ export function CurriculumStructure({ onNavigate, cycleConfig }: Props) {
                       <span className="text-[10px] text-gray-400">
                         {classCount} class{classCount === 1 ? "" : "es"}
                       </span>
-                    </button>
+                      </button>
 
                     {expandedPeriodIndex === periodIndex && (
                       <div className="ml-4 mt-1 space-y-1">
@@ -408,72 +405,12 @@ export function CurriculumStructure({ onNavigate, cycleConfig }: Props) {
                                 <span className="text-[10px] text-gray-400">{classNode.courses.length} courses</span>
                               </button>
 
-                              {isOpen && (
-                                <div className="px-2 pb-2">
-                                  <div className="flex flex-wrap gap-1 mb-2">
-                                    {classNode.courses.length > 0 ? (
-                                      classNode.courses.map((course) => (
-                                        <span
-                                          key={course.id}
-                                          className="px-2 py-0.5 bg-gray-100 text-gray-600 text-[10px] rounded-full"
-                                        >
-                                          {course.name}
-                                        </span>
-                                      ))
-                                    ) : (
-                                      <span className="text-[10px] text-gray-400">No courses yet</span>
-                                    )}
-                                  </div>
-                                  <button
-                                    onClick={() => beginAddCourse(periodIndex, classIndex)}
-                                    className="w-full flex items-center justify-center gap-1 rounded-lg border border-dashed border-blue-200 px-2 py-1.5 text-[11px] text-blue-600 hover:bg-blue-50"
-                                  >
-                                    <Plus size={10} />
-                                    Add Course
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-
-                        {classDraftPeriodIndex === periodIndex && (
-                          <div className="rounded-lg border border-dashed border-blue-200 bg-blue-50/50 p-2">
-                            <label className="mb-1 block text-[10px] font-medium uppercase tracking-wide text-gray-500">
-                              New class in {period}
-                            </label>
-                            <div className="flex gap-2">
-                              <input
-                                value={classDraftName}
-                                onChange={(e) => setClassDraftName(e.target.value)}
-                                placeholder="e.g. Grade 10"
-                                className="flex-1 rounded-lg border border-gray-300 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-300"
-                              />
-                              <button
-                                onClick={addClass}
-                                className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700"
-                              >
-                                Add
-                              </button>
-                            </div>
-                            <button
-                              onClick={() => setClassDraftPeriodIndex(null)}
-                              className="mt-1 text-[10px] text-gray-400 hover:text-gray-600"
-                            >
-                              Cancel
-                            </button>
+                             
                           </div>
-                        )}
+                        );
+                      })}
                       </div>
                     )}
-
-                    <button
-                      onClick={() => beginAddClass(periodIndex)}
-                      className="ml-3 mt-2 w-[calc(100%-0.75rem)] flex items-center gap-2 px-3 py-2 border border-dashed border-blue-200 rounded-lg text-blue-600 text-xs hover:bg-blue-50 justify-center"
-                    >
-                      <Plus size={12} />
-                      Add Class
-                    </button>
                   </div>
                 );
               })}
@@ -508,14 +445,7 @@ export function CurriculumStructure({ onNavigate, cycleConfig }: Props) {
                     Edit
                   </button>
                   <button
-                    onClick={() => {
-                      if (activePeriodClasses.length > 0) {
-                        beginAddCourse(expandedPeriodIndex, 0);
-                        return;
-                      }
-
-                      beginAddClass(expandedPeriodIndex);
-                    }}
+                    onClick={() => beginAddClass(expandedPeriodIndex)}
                     className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs hover:bg-blue-700"
                   >
                     <Plus size={12} />
@@ -541,6 +471,34 @@ export function CurriculumStructure({ onNavigate, cycleConfig }: Props) {
                 ))}
               </div>
 
+              {classDraftPeriodIndex === expandedPeriodIndex && (
+                <div className="mb-4 rounded-lg border border-dashed border-blue-200 bg-blue-50/50 p-3">
+                  <label className="mb-1 block text-[10px] font-medium uppercase tracking-wide text-gray-500">
+                    New class in {activePeriod}
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      value={classDraftName}
+                      onChange={(e) => setClassDraftName(e.target.value)}
+                      placeholder="e.g. Grade 10"
+                      className="flex-1 rounded-lg border border-gray-300 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-300"
+                    />
+                    <button
+                      onClick={addClass}
+                      className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700"
+                    >
+                      Add
+                    </button>
+                  </div>
+                  <button
+                    onClick={() => setClassDraftPeriodIndex(null)}
+                    className="mt-1 text-[10px] text-gray-400 hover:text-gray-600"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
+
               <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg text-xs text-blue-700">
                 <div className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
                   <span className="text-blue-600 font-bold text-[9px]">i</span>
@@ -556,13 +514,6 @@ export function CurriculumStructure({ onNavigate, cycleConfig }: Props) {
                 <h3 className="font-semibold text-gray-900">Courses by Class</h3>
                 <div className="flex items-center gap-2">
                   <button className="text-xs text-blue-600 hover:underline">Expand All</button>
-                  <button
-                    onClick={() => beginAddClass(expandedPeriodIndex)}
-                    className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs hover:bg-blue-700"
-                  >
-                    <Plus size={12} />
-                    Add Course
-                  </button>
                 </div>
               </div>
               <p className="text-xs text-gray-500 mb-4">Manage courses for each class in this period.</p>
@@ -616,37 +567,39 @@ export function CurriculumStructure({ onNavigate, cycleConfig }: Props) {
                                 <span className="text-xs text-gray-400">No courses added yet.</span>
                               )}
                             </div>
-
-                            {courseDraftTarget?.periodIndex === expandedPeriodIndex &&
-                              courseDraftTarget.classIndex === classIndex && (
-                                <div className="rounded-lg border border-dashed border-blue-200 bg-blue-50/50 p-2">
-                                  <label className="mb-1 block text-[10px] font-medium uppercase tracking-wide text-gray-500">
-                                    New course for {classNode.name}
-                                  </label>
-                                  <div className="flex gap-2">
-                                    <input
-                                      value={courseDraftName}
-                                      onChange={(e) => setCourseDraftName(e.target.value)}
-                                      placeholder="e.g. Creative Arts"
-                                      className="flex-1 rounded-lg border border-gray-300 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-300"
-                                    />
-                                    <button
-                                      onClick={addCourse}
-                                      className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700"
-                                    >
-                                      Add
-                                    </button>
-                                  </div>
-                                  <button
-                                    onClick={() => setCourseDraftTarget(null)}
-                                    className="mt-1 text-[10px] text-gray-400 hover:text-gray-600"
-                                  >
-                                    Cancel
-                                  </button>
-                                </div>
-                              )}
                           </div>
                         )}
+
+                        {courseDraftTarget?.periodIndex === expandedPeriodIndex &&
+                          courseDraftTarget.classIndex === classIndex && (
+                            <div className="px-3 pb-3">
+                              <div className="rounded-lg border border-dashed border-blue-200 bg-blue-50/50 p-2">
+                                <label className="mb-1 block text-[10px] font-medium uppercase tracking-wide text-gray-500">
+                                  New course for {classNode.name}
+                                </label>
+                                <div className="flex gap-2">
+                                  <input
+                                    value={courseDraftName}
+                                    onChange={(e) => setCourseDraftName(e.target.value)}
+                                    placeholder="e.g. Creative Arts"
+                                    className="flex-1 rounded-lg border border-gray-300 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-300"
+                                  />
+                                  <button
+                                    onClick={addCourse}
+                                    className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700"
+                                  >
+                                    Add
+                                  </button>
+                                </div>
+                                <button
+                                  onClick={() => setCourseDraftTarget(null)}
+                                  className="mt-1 text-[10px] text-gray-400 hover:text-gray-600"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </div>
+                          )}
                       </div>
                     );
                   })
@@ -732,9 +685,8 @@ export function CurriculumStructure({ onNavigate, cycleConfig }: Props) {
                     icon: Calendar,
                     color: "bg-blue-50 text-blue-600",
                   },
-                  { label: "Add Class / Grade", sub: "Create or import classes", icon: GraduationCap, color: "bg-green-50 text-green-600" },
-                  { label: "Add Course", sub: "Attach subjects to classes", icon: BookMarked, color: "bg-purple-50 text-purple-600" },
                   { label: "Reorder Structure", sub: "Drag and drop to organize", icon: BarChart3, color: "bg-orange-50 text-orange-600" },
+                  { label: "View History", sub: "Review previous changes", icon: Clock, color: "bg-purple-50 text-purple-600" },
                 ].map((a) => (
                   <button
                     key={a.label}
@@ -768,6 +720,234 @@ export function CurriculumStructure({ onNavigate, cycleConfig }: Props) {
           </div>
         </div>
       </div>
+
+      {isSimplePreviewOpen && (
+        <div className="fixed inset-0 z-50 bg-black/50 p-4 sm:p-6">
+          <div className="mx-auto flex h-full w-full max-w-6xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
+            <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-5 py-4">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">Curriculum Preview</h2>
+                <p className="text-sm text-gray-500">A simple live preview of the current curriculum structure.</p>
+              </div>
+              <button
+                onClick={() => setIsSimplePreviewOpen(false)}
+                className="rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50"
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-auto p-5">
+              <div className="space-y-4">
+                <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-100">
+                      <BookOpen size={20} className="text-blue-600" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-lg font-bold text-gray-900">CBC Junior Secondary v1.1</div>
+                      <div className="text-sm text-gray-500">
+                        {cycleSummary} - {periods.length} periods
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <span className="rounded-full bg-white px-3 py-1 text-xs text-gray-600 border border-gray-200">
+                        Active: {activePeriod || "None"}
+                      </span>
+                      <span className="rounded-full bg-white px-3 py-1 text-xs text-gray-600 border border-gray-200">
+                        Classes: {activePeriodClasses.length}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(280px,0.8fr)]">
+                  <div className="space-y-4">
+                    {periods.map((period, periodIndex) => {
+                      const periodNode = structure[periodIndex];
+                      const classes = periodNode?.classes ?? [];
+
+                      return (
+                        <div key={period} className="rounded-2xl border border-gray-200 bg-white p-4">
+                          <div className="mb-3 flex items-center justify-between">
+                            <div>
+                              <div className="text-base font-semibold text-gray-900">{period}</div>
+                              <div className="text-xs text-gray-500">{classes.length} class{classes.length === 1 ? "" : "es"}</div>
+                            </div>
+                            <span className={`rounded-full px-2.5 py-1 text-[10px] font-medium ${periodIndex === expandedPeriodIndex ? "bg-blue-50 text-blue-700" : "bg-gray-100 text-gray-500"}`}>
+                              {periodIndex === expandedPeriodIndex ? "Active" : "Preview"}
+                            </span>
+                          </div>
+
+                          {classes.length > 0 ? (
+                            <div className="flex flex-wrap gap-2">
+                              {classes.map((classNode) => (
+                                <div key={classNode.id} className="rounded-full border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-800">
+                                  {classNode.name}
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 px-4 py-5 text-sm text-gray-500">
+                              No classes in this {cycleConfig.customKind === "semester" || cycleConfig.preset === "2sem" ? "semester" : "term"} yet.
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="rounded-2xl border border-gray-200 bg-white p-4">
+                      <h4 className="mb-3 text-sm font-semibold text-gray-900">Summary</h4>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-500">Academic cycle</span>
+                          <span className="font-medium text-gray-900">{cycleSummary}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-500">Periods</span>
+                          <span className="font-medium text-gray-900">{periods.length}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-500">Classes</span>
+                          <span className="font-medium text-gray-900">{activePeriodClasses.length}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-500">Courses</span>
+                          <span className="font-medium text-gray-900">{activePeriodCourseCount}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-gray-200 bg-white p-4">
+                      <h4 className="mb-3 text-sm font-semibold text-gray-900">Preview Notes</h4>
+                      <ul className="space-y-2 text-sm text-gray-600">
+                        <li>Terms or semesters are shown as period cards.</li>
+                        <li>Classes are shown as pills inside each period.</li>
+                        <li>This is a live preview of the current structure.</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
+        <DialogContent className="w-[96vw] max-w-7xl max-h-[90vh] overflow-hidden p-0">
+          <div className="max-h-[90vh] overflow-auto p-6 lg:p-8">
+            <DialogHeader className="text-left mb-5">
+              <DialogTitle className="text-2xl">Curriculum Preview</DialogTitle>
+              <DialogDescription>
+                Live preview of the current curriculum structure, terms, and classes.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="grid gap-6 xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,0.9fr)]">
+              <div className="space-y-4">
+                <div className="rounded-2xl border border-gray-200 bg-gradient-to-r from-white to-blue-50/30 p-5 shadow-sm">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-100">
+                      <BookOpen size={22} className="text-blue-600" />
+                    </div>
+                    <div>
+                      <div className="text-xl font-bold text-gray-900">CBC Junior Secondary v1.1</div>
+                      <div className="text-sm text-gray-500">
+                        {cycleSummary} • {periods.length} periods • {activePeriodClasses.length} classes in active period
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {periods.map((period, periodIndex) => {
+                  const periodNode = structure[periodIndex];
+                  const classes = periodNode?.classes ?? [];
+                  const courseCount = classes.reduce((total, classNode) => total + classNode.courses.length, 0);
+
+                  return (
+                    <div key={period} className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+                      <div className="mb-4 flex items-center justify-between gap-3">
+                        <div>
+                          <div className="text-base font-semibold text-gray-900">{period}</div>
+                          <div className="text-xs text-gray-500">
+                            {classes.length} class{classes.length === 1 ? "" : "es"} • {courseCount} course
+                            {courseCount === 1 ? "" : "s"}
+                          </div>
+                        </div>
+                        <span className="rounded-full bg-blue-50 px-3 py-1 text-[10px] font-medium text-blue-700">
+                          {periodIndex === expandedPeriodIndex ? "Active" : "Preview"}
+                        </span>
+                      </div>
+
+                      {classes.length > 0 ? (
+                        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                          {classes.map((classNode) => (
+                            <div key={classNode.id} className="rounded-xl border border-gray-100 bg-gray-50 p-4">
+                              <div className="flex items-center gap-2">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-100">
+                                  <GraduationCap size={14} className="text-green-600" />
+                                </div>
+                                <div>
+                                  <div className="text-sm font-semibold text-gray-800">{classNode.name}</div>
+                                  <div className="text-[10px] text-gray-500">{classNode.courses.length} courses</div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-5 text-sm text-gray-500">
+                          No classes have been added to this {cycleConfig.customKind === "semester" || cycleConfig.preset === "2sem" ? "semester" : "term"} yet.
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="space-y-4 xl:sticky xl:top-0">
+                <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+                  <h4 className="mb-3 text-sm font-semibold text-gray-900">Structure Summary</h4>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div className="rounded-xl bg-gray-50 p-3">
+                      <div className="text-[10px] uppercase tracking-wide text-gray-400">Academic cycle</div>
+                      <div className="mt-1 font-medium text-gray-900">{cycleSummary}</div>
+                    </div>
+                    <div className="rounded-xl bg-gray-50 p-3">
+                      <div className="text-[10px] uppercase tracking-wide text-gray-400">Periods</div>
+                      <div className="mt-1 font-medium text-gray-900">{periods.length}</div>
+                    </div>
+                    <div className="rounded-xl bg-gray-50 p-3">
+                      <div className="text-[10px] uppercase tracking-wide text-gray-400">Active period</div>
+                      <div className="mt-1 font-medium text-gray-900">{activePeriod || "None"}</div>
+                    </div>
+                    <div className="rounded-xl bg-gray-50 p-3">
+                      <div className="text-[10px] uppercase tracking-wide text-gray-400">Classes</div>
+                      <div className="mt-1 font-medium text-gray-900">{activePeriodClasses.length}</div>
+                    </div>
+                    <div className="col-span-2 rounded-xl bg-gray-50 p-3">
+                      <div className="text-[10px] uppercase tracking-wide text-gray-400">Courses in active period</div>
+                      <div className="mt-1 font-medium text-gray-900">{activePeriodCourseCount}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+                  <h4 className="mb-3 text-sm font-semibold text-gray-900">What you can preview</h4>
+                  <ul className="space-y-2 text-sm text-gray-600">
+                    <li>Terms or semesters in the current curriculum</li>
+                    <li>Classes assigned to each period</li>
+                    <li>How the current structure will look when deployed</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
