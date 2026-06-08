@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   BookOpen, 
   Search, 
@@ -18,151 +18,27 @@ import {
   School,
   TrendingUp
 } from "lucide-react";
+import { curriculumService } from "../lib/curriculumService";
+import { LibraryEntry, Framework, CurriculumStatus } from "../lib/curriculumTypes";
 
-type Screen = "management" | "create" | "structure" | "settings" | "deploy" | "version-control" | "library";
+type Screen = "management" | "create" | "structure" | "settings" | "deploy" | "version-control" | "library" | "competencies" | "review";
 
 interface Props {
   onNavigate: (screen: Screen) => void;
 }
 
-type CurriculumStatus = "Published" | "Draft" | "Under Review" | "Archived";
-type Framework = "CBC" | "British" | "IGCSE" | "American" | "IB";
-
-interface Curriculum {
-  id: string;
-  name: string;
-  version: string;
-  framework: Framework;
-  educationLevel: string;
-  grades: string;
-  subjects: number;
-  terms: number;
-  status: CurriculumStatus;
-  createdDate: string;
-  lastModified: string;
-  deployments: number;
-  learners: number;
-  creator: string;
-  description: string;
-}
-
-const mockCurriculums: Curriculum[] = [
-  {
-    id: "cbc-js-v1.1",
-    name: "CBC Junior Secondary",
-    version: "v1.1",
-    framework: "CBC",
-    educationLevel: "Junior Secondary",
-    grades: "7-9",
-    subjects: 9,
-    terms: 3,
-    status: "Published",
-    createdDate: "12 Jan 2024",
-    lastModified: "15 Mar 2024",
-    deployments: 186,
-    learners: 128540,
-    creator: "Ministry of Education",
-    description: "Competency-Based Curriculum for Junior Secondary aligned with CBC framework"
-  },
-  {
-    id: "british-ls-v2.0",
-    name: "British Lower Secondary",
-    version: "v2.0",
-    framework: "British",
-    educationLevel: "Lower Secondary",
-    grades: "7-9",
-    subjects: 12,
-    terms: 3,
-    status: "Published",
-    createdDate: "05 Nov 2023",
-    lastModified: "28 Feb 2024",
-    deployments: 45,
-    learners: 32180,
-    creator: "Cambridge Assessment",
-    description: "British curriculum framework for lower secondary education"
-  },
-  {
-    id: "igcse-9-1-v1.0",
-    name: "IGCSE 9-1 Curriculum",
-    version: "v1.0",
-    framework: "IGCSE",
-    educationLevel: "Secondary",
-    grades: "9-11",
-    subjects: 15,
-    terms: 2,
-    status: "Published",
-    createdDate: "20 Aug 2023",
-    lastModified: "10 Jan 2024",
-    deployments: 12,
-    learners: 8640,
-    creator: "Pearson Edexcel",
-    description: "IGCSE curriculum with 9-1 grading system for international schools"
-  },
-  {
-    id: "cbc-primary-v2.1",
-    name: "CBC Primary Education",
-    version: "v2.1",
-    framework: "CBC",
-    educationLevel: "Primary",
-    grades: "1-6",
-    subjects: 8,
-    terms: 3,
-    status: "Draft",
-    createdDate: "03 Feb 2024",
-    lastModified: "22 Mar 2024",
-    deployments: 0,
-    learners: 0,
-    creator: "Kenya Institute of Curriculum Dev.",
-    description: "Updated CBC primary curriculum with enhanced competency framework"
-  },
-  {
-    id: "american-middle-v1.5",
-    name: "American Middle School",
-    version: "v1.5",
-    framework: "American",
-    educationLevel: "Middle School",
-    grades: "6-8",
-    subjects: 10,
-    terms: 2,
-    status: "Under Review",
-    createdDate: "18 Dec 2023",
-    lastModified: "05 Mar 2024",
-    deployments: 8,
-    learners: 4320,
-    creator: "Common Core Standards",
-    description: "American middle school curriculum aligned with Common Core standards"
-  },
-  {
-    id: "ib-myp-v3.0",
-    name: "IB Middle Years Programme",
-    version: "v3.0",
-    framework: "IB",
-    educationLevel: "Middle Years",
-    grades: "6-10",
-    subjects: 8,
-    terms: 2,
-    status: "Published",
-    createdDate: "15 Sep 2023",
-    lastModified: "12 Feb 2024",
-    deployments: 25,
-    learners: 15750,
-    creator: "International Baccalaureate",
-    description: "International Baccalaureate Middle Years Programme for global education"
-  }
-];
-
 const statusColors = {
-  "Published": "bg-green-100 text-green-700",
-  "Draft": "bg-blue-100 text-blue-700",
-  "Under Review": "bg-yellow-100 text-yellow-700",
-  "Archived": "bg-gray-100 text-gray-700"
+  "published": "bg-green-100 text-green-700",
+  "draft": "bg-blue-100 text-blue-700",
+  "review": "bg-yellow-100 text-yellow-700",
+  "archived": "bg-gray-100 text-gray-700"
 };
 
 const statusIcons = {
-  "Published": CheckCircle2,
-  "Draft": Edit,
-  "Under Review": Clock,
-  "Archived": AlertCircle
+  "published": CheckCircle2,
+  "draft": Edit,
+  "review": Clock,
+  "archived": AlertCircle
 };
 
 const frameworkColors = {
@@ -179,11 +55,30 @@ export function CurriculumLibrary({ onNavigate }: Props) {
   const [selectedFramework, setSelectedFramework] = useState<string>("All Frameworks");
   const [selectedStatus, setSelectedStatus] = useState<string>("All Status");
   const [sortBy, setSortBy] = useState("lastModified");
+  const [curriculums, setCurriculums] = useState<LibraryEntry[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const filteredCurriculums = mockCurriculums.filter(curriculum => {
-    const matchesSearch = curriculum.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         curriculum.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesFramework = selectedFramework === "All Frameworks" || curriculum.framework === selectedFramework;
+  // Load curriculums on component mount
+  useEffect(() => {
+    loadCurriculums();
+  }, []);
+
+  const loadCurriculums = async () => {
+    setIsLoading(true);
+    try {
+      const libraryCurriculums = await curriculumService.getLibraryCurriculums();
+      setCurriculums(libraryCurriculums);
+    } catch (error) {
+      console.error('Failed to load curriculums:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const filteredCurriculums = curriculums.filter(curriculum => {
+    const matchesSearch = curriculum.basicInfo.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         curriculum.basicInfo.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesFramework = selectedFramework === "All Frameworks" || curriculum.basicInfo.framework === selectedFramework;
     const matchesStatus = selectedStatus === "All Status" || curriculum.status === selectedStatus;
     
     return matchesSearch && matchesFramework && matchesStatus;
@@ -192,9 +87,9 @@ export function CurriculumLibrary({ onNavigate }: Props) {
   const sortedCurriculums = [...filteredCurriculums].sort((a, b) => {
     switch (sortBy) {
       case "name":
-        return a.name.localeCompare(b.name);
+        return a.basicInfo.name.localeCompare(b.basicInfo.name);
       case "lastModified":
-        return new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime();
+        return new Date(b.modifiedAt).getTime() - new Date(a.modifiedAt).getTime();
       case "deployments":
         return b.deployments - a.deployments;
       case "learners":
@@ -238,7 +133,7 @@ export function CurriculumLibrary({ onNavigate }: Props) {
                 <BookOpen size={18} className="text-blue-600" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-gray-900">{mockCurriculums.length}</div>
+                <div className="text-2xl font-bold text-gray-900">{curriculums.length}</div>
                 <div className="text-xs text-gray-500">Total Curriculums</div>
               </div>
             </div>
@@ -249,7 +144,7 @@ export function CurriculumLibrary({ onNavigate }: Props) {
                 <CheckCircle2 size={18} className="text-green-600" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-gray-900">{mockCurriculums.filter(c => c.status === "Published").length}</div>
+                <div className="text-2xl font-bold text-gray-900">{curriculums.filter(c => c.status === "published").length}</div>
                 <div className="text-xs text-gray-500">Published</div>
               </div>
             </div>
@@ -260,7 +155,7 @@ export function CurriculumLibrary({ onNavigate }: Props) {
                 <School size={18} className="text-orange-600" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-gray-900">{mockCurriculums.reduce((sum, c) => sum + c.deployments, 0)}</div>
+                <div className="text-2xl font-bold text-gray-900">{curriculums.reduce((sum, c) => sum + c.deployments, 0)}</div>
                 <div className="text-xs text-gray-500">Active Deployments</div>
               </div>
             </div>
@@ -271,7 +166,7 @@ export function CurriculumLibrary({ onNavigate }: Props) {
                 <Users size={18} className="text-indigo-600" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-gray-900">{mockCurriculums.reduce((sum, c) => sum + c.learners, 0).toLocaleString()}</div>
+                <div className="text-2xl font-bold text-gray-900">{curriculums.reduce((sum, c) => sum + c.learners, 0).toLocaleString()}</div>
                 <div className="text-xs text-gray-500">Total Learners</div>
               </div>
             </div>
@@ -366,7 +261,7 @@ export function CurriculumLibrary({ onNavigate }: Props) {
         {/* Results */}
         <div className="mb-4 flex items-center justify-between">
           <p className="text-sm text-gray-600">
-            Showing {sortedCurriculums.length} of {mockCurriculums.length} curriculums
+            Showing {sortedCurriculums.length} of {curriculums.length} curriculums
           </p>
         </div>
 
@@ -384,7 +279,7 @@ export function CurriculumLibrary({ onNavigate }: Props) {
                         <BookOpen size={20} className="text-blue-600" />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-gray-900 text-sm">{curriculum.name}</h3>
+                        <h3 className="font-semibold text-gray-900 text-sm">{curriculum.basicInfo.name}</h3>
                         <p className="text-xs text-gray-500">{curriculum.version}</p>
                       </div>
                     </div>
@@ -397,8 +292,8 @@ export function CurriculumLibrary({ onNavigate }: Props) {
 
                   {/* Framework & Status */}
                   <div className="flex items-center gap-2 mb-3">
-                    <span className={`px-2 py-1 text-xs font-medium rounded border ${frameworkColors[curriculum.framework]}`}>
-                      {curriculum.framework}
+                    <span className={`px-2 py-1 text-xs font-medium rounded border ${frameworkColors[curriculum.basicInfo.framework]}`}>
+                      {curriculum.basicInfo.framework}
                     </span>
                     <span className={`flex items-center gap-1 px-2 py-1 text-xs font-medium rounded ${statusColors[curriculum.status]}`}>
                       <StatusIcon size={12} />
@@ -407,17 +302,17 @@ export function CurriculumLibrary({ onNavigate }: Props) {
                   </div>
 
                   {/* Description */}
-                  <p className="text-xs text-gray-600 mb-4 line-clamp-2">{curriculum.description}</p>
+                  <p className="text-xs text-gray-600 mb-4 line-clamp-2">{curriculum.basicInfo.description}</p>
 
                   {/* Stats */}
                   <div className="grid grid-cols-2 gap-3 mb-4">
                     <div className="text-center p-2 bg-gray-50 rounded-lg">
-                      <div className="text-sm font-semibold text-gray-900">{curriculum.subjects}</div>
-                      <div className="text-xs text-gray-500">Subjects</div>
+                      <div className="text-sm font-semibold text-gray-900">{curriculum.structure.length}</div>
+                      <div className="text-xs text-gray-500">Periods</div>
                     </div>
                     <div className="text-center p-2 bg-gray-50 rounded-lg">
-                      <div className="text-sm font-semibold text-gray-900">{curriculum.terms}</div>
-                      <div className="text-xs text-gray-500">Terms</div>
+                      <div className="text-sm font-semibold text-gray-900">{curriculum.structure.reduce((sum, period) => sum + period.classes.length, 0)}</div>
+                      <div className="text-xs text-gray-500">Classes</div>
                     </div>
                     <div className="text-center p-2 bg-gray-50 rounded-lg">
                       <div className="text-sm font-semibold text-gray-900">{curriculum.deployments}</div>
@@ -431,8 +326,8 @@ export function CurriculumLibrary({ onNavigate }: Props) {
 
                   {/* Meta Info */}
                   <div className="text-xs text-gray-400 mb-4">
-                    <div>Grades {curriculum.grades} • {curriculum.educationLevel}</div>
-                    <div>Modified: {curriculum.lastModified}</div>
+                    <div>Grades {curriculum.basicInfo.grades} • {curriculum.basicInfo.educationLevel}</div>
+                    <div>Modified: {new Date(curriculum.modifiedAt).toLocaleDateString()}</div>
                     <div>By: {curriculum.creator}</div>
                   </div>
 
@@ -480,14 +375,14 @@ export function CurriculumLibrary({ onNavigate }: Props) {
                             <BookOpen size={14} className="text-blue-600" />
                           </div>
                           <div>
-                            <div className="font-medium text-gray-900 text-sm">{curriculum.name}</div>
-                            <div className="text-xs text-gray-500">{curriculum.version} • Grades {curriculum.grades}</div>
+                            <div className="font-medium text-gray-900 text-sm">{curriculum.basicInfo.name}</div>
+                            <div className="text-xs text-gray-500">{curriculum.version} • Grades {curriculum.basicInfo.grades}</div>
                           </div>
                         </div>
                       </td>
                       <td className="py-3 px-4">
-                        <span className={`px-2 py-1 text-xs font-medium rounded border ${frameworkColors[curriculum.framework]}`}>
-                          {curriculum.framework}
+                        <span className={`px-2 py-1 text-xs font-medium rounded border ${frameworkColors[curriculum.basicInfo.framework]}`}>
+                          {curriculum.basicInfo.framework}
                         </span>
                       </td>
                       <td className="py-3 px-4">
@@ -498,7 +393,7 @@ export function CurriculumLibrary({ onNavigate }: Props) {
                       </td>
                       <td className="py-3 px-4 text-sm text-gray-900">{curriculum.deployments}</td>
                       <td className="py-3 px-4 text-sm text-gray-900">{curriculum.learners.toLocaleString()}</td>
-                      <td className="py-3 px-4 text-xs text-gray-500">{curriculum.lastModified}</td>
+                      <td className="py-3 px-4 text-xs text-gray-500">{new Date(curriculum.modifiedAt).toLocaleDateString()}</td>
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2">
                           <button 
