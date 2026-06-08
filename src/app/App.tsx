@@ -7,6 +7,7 @@ import { CurriculumStructure } from "./components/CurriculumStructure";
 import { CurriculumSettings } from "./components/CurriculumSettings";
 import { DeploySupplementary } from "./components/DeploySupplementary";
 import { VersionControl } from "./components/VersionControl";
+import { defaultCurriculumCycle, type CurriculumCycleConfig } from "./lib/curriculumCycle";
 
 type Screen = "management" | "create" | "structure" | "settings" | "deploy" | "version-control";
 
@@ -42,6 +43,7 @@ const breadcrumbMap: Record<Screen, Array<{ label: string; active?: boolean }>> 
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>("management");
+  const [curriculumCycle, setCurriculumCycle] = useState<CurriculumCycleConfig>(defaultCurriculumCycle);
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-gray-50 font-sans">
@@ -74,8 +76,19 @@ export default function App() {
         </div>
 
         {screen === "management" && <CurriculumManagement onNavigate={setScreen} />}
-        {screen === "create" && <CreateCurriculum onNavigate={setScreen} />}
-        {screen === "structure" && <CurriculumStructure onNavigate={setScreen} />}
+        {screen === "create" && (
+          <CreateCurriculum
+            onNavigate={setScreen}
+            cycleConfig={curriculumCycle}
+            onCycleConfigChange={setCurriculumCycle}
+          />
+        )}
+        {screen === "structure" && (
+          <CurriculumStructure
+            onNavigate={setScreen}
+            cycleConfig={curriculumCycle}
+          />
+        )}
         {screen === "settings" && <CurriculumSettings />}
         {screen === "deploy" && <DeploySupplementary onNavigate={setScreen} />}
         {screen === "version-control" && <VersionControl />}
