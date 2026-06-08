@@ -15,6 +15,7 @@ import {
   BarChart3,
   Map,
   Clock,
+  ArrowRight,
 } from "lucide-react";
 import { getCyclePeriods, getCycleSummary, type CurriculumCycleConfig } from "../lib/curriculumCycle";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "./ui/dialog";
@@ -272,6 +273,9 @@ export function CurriculumStructure({ onNavigate, cycleConfig }: Props) {
             >
               <Eye size={14} />
               Preview Curriculum
+            </button>
+            <button className="flex items-center gap-2 px-4 py-2 bg-[#1a4db5] text-white rounded-lg text-sm hover:bg-blue-700">
+              Next: Competencies <ArrowRight size={14} />
             </button>
           </div>
         </div>

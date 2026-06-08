@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, ChevronDown, Calendar, GitBranch, CheckCircle2, Rocket, BarChart3, BookOpen } from "lucide-react";
+import { X, ChevronDown, Calendar, GitBranch, CheckCircle2, Rocket, BarChart3, BookOpen, ArrowRight } from "lucide-react";
 import {
   getCyclePeriods,
   getCycleSummary,
@@ -114,7 +114,7 @@ export function CreateCurriculum({ onNavigate, cycleConfig, onCycleConfigChange 
               onClick={() => onNavigate("structure")}
               className="flex items-center gap-2 px-4 py-2 bg-[#1a4db5] text-white rounded-lg text-sm hover:bg-blue-700"
             >
-              Next: Add Structure {"->"}
+              Next: Structure <ArrowRight size={14} />
             </button>
           </div>
         </div>
