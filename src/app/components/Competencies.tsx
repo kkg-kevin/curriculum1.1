@@ -7,20 +7,14 @@ import {
   ChevronDown, 
   ChevronRight, 
   BookOpen, 
-  Eye, 
-  Edit, 
-  MoreHorizontal,
-  Star,
   Link,
   ArrowRight,
-  Calendar,
-  Users,
   Award,
-  Settings,
   Info
 } from "lucide-react";
+import { useCurriculum } from "../lib/curriculumContext";
 
-type Screen = "management" | "create" | "structure" | "settings" | "deploy" | "version-control" | "library";
+type Screen = "management" | "create" | "structure" | "settings" | "deploy" | "version-control" | "library" | "competencies" | "review";
 
 interface Props {
   onNavigate: (screen: Screen) => void;
@@ -121,11 +115,37 @@ const skillCategories = [
 
 const steps = ["Basic Information", "Structure", "Classes & Courses", "Competencies", "Settings", "Review"];
 export function Competencies({ onNavigate }: Props) {
+  const { state, updateCompetencies, goToStep, completeStep } = useCurriculum();
   const [activeTab, setActiveTab] = useState("Frameworks");
   const [selectedFramework, setSelectedFramework] = useState("cbc-framework");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedOutcomes, setSelectedOutcomes] = useState<string[]>(["lo-1", "lo-2"]);
   const [expandedOutcome, setExpandedOutcome] = useState<string | null>("lo-1");
+
+  const handleNext = () => {
+    if (state.curriculum) {
+      // Update competencies in context
+      updateCompetencies({
+        selectedFramework,
+        selectedOutcomes,
+        // Add other competency data as needed
+      });
+      
+      // Mark step as completed and go to next
+      completeStep(3);
+      goToStep(4);
+      onNavigate("settings");
+    }
+  };
+
+  const handleSaveDraft = async () => {
+    if (state.curriculum) {
+      updateCompetencies({
+        selectedFramework,
+        selectedOutcomes,
+      });
+    }
+  };
 
   const filteredOutcomes = mockLearningOutcomes.filter(outcome =>
     outcome.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -158,11 +178,13 @@ export function Competencies({ onNavigate }: Props) {
             >
               ← Back to Structure
             </button>
-            <button className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 bg-white hover:bg-gray-50">
+            <button 
+              onClick={handleSaveDraft}
+              className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 bg-white hover:bg-gray-50">
               Save as Draft
             </button>
             <button
-              onClick={() => onNavigate("settings")} 
+              onClick={handleNext}
               className="flex items-center gap-2 px-4 py-2 bg-[#1a4db5] text-white rounded-lg text-sm hover:bg-blue-700"
             >
               Next: Settings <ArrowRight size={14} />

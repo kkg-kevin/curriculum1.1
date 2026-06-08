@@ -1,6 +1,6 @@
 import { LayoutDashboard, School, BookOpen, Users, GraduationCap, BookMarked, ClipboardList, BarChart3, Settings, HelpCircle, ExternalLink } from "lucide-react";
 
-type Screen = "management" | "create" | "structure" | "settings" | "deploy" | "version-control" | "library";
+type Screen = "management" | "create" | "structure" | "settings" | "deploy" | "version-control" | "library" | "competencies" | "review";
 
 interface SidebarProps {
   activeScreen: Screen;
@@ -23,7 +23,7 @@ export function Sidebar({ activeScreen, onNavigate }: SidebarProps) {
   const isActive = (screen: Screen | null) => {
     if (!screen) return false;
     if (screen === "management") {
-      return ["management", "create", "structure", "deploy", "version-control", "library"].includes(activeScreen);
+      return ["management", "create", "structure", "deploy", "version-control", "library", "competencies", "review"].includes(activeScreen);
     }
     return activeScreen === screen;
   };

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, ChevronDown, Calendar, GitBranch, CheckCircle2, Rocket, BarChart3, BookOpen, ArrowRight } from "lucide-react";
 import {
   getCyclePeriods,
@@ -7,6 +7,7 @@ import {
   type CurriculumCycleConfig,
   type CustomCycleKind,
 } from "../lib/curriculumCycle";
+import { useCurriculum } from "../lib/curriculumContext";
 
 type Screen = "management" | "create" | "structure" | "settings" | "deploy" | "version-control" | "library";
 
@@ -25,25 +26,77 @@ const academicCycleOptions = [
 ] as const;
 
 export function CreateCurriculum({ onNavigate, cycleConfig, onCycleConfigChange }: Props) {
-  const [curriculumName, setCurriculumName] = useState("CBC Junior Secondary");
-  const [curriculumCode, setCurriculumCode] = useState("CBC-JS-2024");
-  const [description, setDescription] = useState(
-    "Competency-Based Curriculum for Junior Secondary\n(Grades 7-9) aligned with the latest CBC framework.",
-  );
-  const [framework, setFramework] = useState("Competency-Based Curriculum (CBC)");
+  const { state, createNewCurriculum, updateBasicInfo, updateCycleConfigStore, goToStep, completeStep } = useCurriculum();
+  
+  // Initialize with curriculum context data or defaults
+  const [curriculumName, setCurriculumName] = useState("");
+  const [curriculumCode, setCurriculumCode] = useState("");
+  const [description, setDescription] = useState("");
+  const [framework, setFramework] = useState("CBC");
   const [educationLevel, setEducationLevel] = useState("Junior Secondary");
+
+  // Load existing curriculum data if available
+  useEffect(() => {
+    if (state.curriculum) {
+      setCurriculumName(state.curriculum.basicInfo.name);
+      setCurriculumCode(state.curriculum.basicInfo.code);
+      setDescription(state.curriculum.basicInfo.description);
+      setFramework(state.curriculum.basicInfo.framework);
+      setEducationLevel(state.curriculum.basicInfo.educationLevel);
+    }
+  }, [state.curriculum]);
+
+  // Create new curriculum if none exists
+  useEffect(() => {
+    if (!state.curriculum && !state.isLoading) {
+      createNewCurriculum();
+    }
+  }, [state.curriculum, state.isLoading, createNewCurriculum]);
 
   const periods = getCyclePeriods(cycleConfig);
   const cycleSummary = getCycleSummary(cycleConfig);
   const isCustom = cycleConfig.preset === "custom";
 
-  const updateCycleConfig = (next: CurriculumCycleConfig) => {
-    onCycleConfigChange(next);
+  const updateCurriculum = () => {
+    if (state.curriculum) {
+      // Update basic info
+      updateBasicInfo({
+        name: curriculumName,
+        code: curriculumCode,
+        description: description,
+        framework: framework as any,
+        educationLevel: educationLevel as any,
+        grades: "7-9", // Default for now
+        countries: ["Kenya"],
+        tags: ["CBC", "Junior Secondary", "Core Curriculum"]
+      });
+
+      // Update cycle config
+      updateCycleConfigStore(cycleConfig);
+      
+      // Mark step as completed
+      completeStep(0);
+    }
   };
+
+  const handleNext = () => {
+    updateCurriculum();
+    goToStep(1);
+    onNavigate("structure");
+  };
+
+  const updateCycleConfigLocal = (next: CurriculumCycleConfig) => {
+    onCycleConfigChange(next);
+    if (state.curriculum) {
+      updateCycleConfigStore(next); 
+    }
+  };
+
+ 
 
   const setPreset = (preset: CurriculumCycleConfig["preset"]) => {
     if (preset === "custom") {
-      updateCycleConfig({
+      updateCycleConfigStore({
         preset,
         customKind: cycleConfig.customKind,
         customPeriods: normalizeCustomPeriods(
@@ -55,7 +108,7 @@ export function CreateCurriculum({ onNavigate, cycleConfig, onCycleConfigChange 
       return;
     }
 
-    updateCycleConfig({
+    updateCycleConfigStore({
       preset,
       customKind: cycleConfig.customKind,
       customPeriods: preset === "3terms" ? ["Term 1", "Term 2", "Term 3"] : ["Semester 1", "Semester 2"],
@@ -64,7 +117,7 @@ export function CreateCurriculum({ onNavigate, cycleConfig, onCycleConfigChange 
 
   const setCustomKind = (kind: CustomCycleKind) => {
     const count = cycleConfig.customPeriods.length || 3;
-    updateCycleConfig({
+    updateCycleConfigStore({
       preset: "custom",
       customKind: kind,
       customPeriods: normalizeCustomPeriods(kind, count, cycleConfig.customPeriods),
@@ -72,7 +125,7 @@ export function CreateCurriculum({ onNavigate, cycleConfig, onCycleConfigChange 
   };
 
   const setCustomPeriodCount = (count: number) => {
-    updateCycleConfig({
+    updateCycleConfigStore({
       ...cycleConfig,
       preset: "custom",
       customPeriods: normalizeCustomPeriods(cycleConfig.customKind, count, cycleConfig.customPeriods),
@@ -82,7 +135,7 @@ export function CreateCurriculum({ onNavigate, cycleConfig, onCycleConfigChange 
   const setCustomPeriodLabel = (index: number, value: string) => {
     const nextPeriods = [...periods];
     nextPeriods[index] = value;
-    updateCycleConfig({
+    updateCycleConfigStore({
       ...cycleConfig,
       preset: "custom",
       customPeriods: nextPeriods,
@@ -111,7 +164,7 @@ export function CreateCurriculum({ onNavigate, cycleConfig, onCycleConfigChange 
               Save as Draft
             </button>
             <button
-              onClick={() => onNavigate("structure")}
+              onClick={handleNext}
               className="flex items-center gap-2 px-4 py-2 bg-[#1a4db5] text-white rounded-lg text-sm hover:bg-blue-700"
             >
               Next: Structure <ArrowRight size={14} />
@@ -126,12 +179,18 @@ export function CreateCurriculum({ onNavigate, cycleConfig, onCycleConfigChange 
               <div className="flex flex-col items-center">
                 <div
                   className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
-                    i === 0 ? "bg-[#1a4db5] text-white" : "bg-white border-2 border-gray-200 text-gray-400"
+                    i === 0 ? "bg-[#1a4db5] text-white" : 
+                    state.curriculum?.completedSteps[i] ? "bg-green-500 text-white" :
+                    "bg-white border-2 border-gray-200 text-gray-400"
                   }`}
                 >
-                  {i + 1}
+                  {state.curriculum?.completedSteps[i] ? <CheckCircle2 size={16} /> : i + 1}
                 </div>
-                <span className={`text-xs mt-1 whitespace-nowrap ${i === 0 ? "text-[#1a4db5] font-medium" : "text-gray-400"}`}>
+                <span className={`text-xs mt-1 whitespace-nowrap ${
+                  i === 0 ? "text-[#1a4db5] font-medium" : 
+                  state.curriculum?.completedSteps[i] ? "text-green-600" :
+                  "text-gray-400"
+                }`}>
                   {step}
                 </span>
               </div>
