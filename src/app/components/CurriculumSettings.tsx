@@ -1,5 +1,11 @@
 import { useState } from "react";
-import { Save, RotateCcw, ChevronDown, CheckCircle2, X, Info, ExternalLink } from "lucide-react";
+import { Save, RotateCcw, ChevronDown, CheckCircle2, X, Info, ExternalLink, ArrowRight } from "lucide-react";
+
+type Screen = "management" | "create" | "structure" | "settings" | "deploy" | "version-control" | "library";
+
+interface Props {
+  onNavigate: (screen: Screen) => void;
+}
 
 const settingsTabs = ["General", "Governance", "Version Control", "Supplement Rules", "Deployment", "Integrations", "Notifications", "Audit"];
 
@@ -16,7 +22,7 @@ function Toggle({ enabled, onToggle }: { enabled: boolean; onToggle: () => void 
   );
 }
 
-export function CurriculumSettings() {
+export function CurriculumSettings({ onNavigate }: Props) {
   const [activeTab, setActiveTab] = useState("General");
   const [toggles, setToggles] = useState({
     competencies: true,
@@ -52,6 +58,12 @@ export function CurriculumSettings() {
             <button className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700">
               <Save size={14} />
               Save Changes
+            </button>
+            <button 
+              onClick={() => onNavigate("library")}
+              className="flex items-center gap-2 px-4 py-2 bg-[#1a4db5] text-white rounded-lg text-sm hover:bg-blue-700"
+            >
+              Next: Review <ArrowRight size={14} />
             </button>
           </div>
         </div>
