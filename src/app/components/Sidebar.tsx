@@ -79,7 +79,7 @@ export function Sidebar({ activeScreen, onNavigate }: SidebarProps) {
           </div>
           <span className="text-white text-xs font-semibold">digifunzi</span>
         </div>
-        <div className="text-[#8899bb] text-[10px]">© 2024 Digifunzi LTD.</div>
+        <div className="text-[#8899bb] text-[10px]">© 2026 Digifunzi LTD.</div>
       </div>
     </div>
   );
