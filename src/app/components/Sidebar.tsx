@@ -64,7 +64,7 @@ export function Sidebar({ activeScreen, onNavigate }: SidebarProps) {
 
       <div className="p-3 mx-2 mb-4 bg-[#162e5c] rounded-lg">
         <div className="text-white text-xs font-semibold mb-1">Need Help?</div>
-        <div className="text-[#8899bb] text-[10px] mb-2">Visit our help center or contact support.</div>
+        <div className="text-[#8899bb] text-[10px] mb-2">Contact support.</div>
         <button className="flex items-center gap-1 text-[#4a9eff] text-[11px]">
           <HelpCircle size={12} />
           Get Help
@@ -79,7 +79,7 @@ export function Sidebar({ activeScreen, onNavigate }: SidebarProps) {
           </div>
           <span className="text-white text-xs font-semibold">digifunzi</span>
         </div>
-        <div className="text-[#8899bb] text-[10px]">© 2026 Digifunzi LTD.</div>
+        <div className="text-[#8899bb] text-[10px]">© 2026 Digifunzi.</div>
       </div>
     </div>
   );
