@@ -45,9 +45,9 @@ export function TopBar({ breadcrumbs, notificationCount = 3 }: TopBarProps) {
           )}
         </button>
         <div className="flex items-center gap-2 cursor-pointer">
-          <div className="w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center text-white text-xs font-bold">JK</div>
+          <div className="w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center text-white text-xs font-bold">KM</div>
           <div className="hidden md:block">
-            <div className="text-xs font-semibold text-gray-800 leading-tight">Jane K.</div>
+            <div className="text-xs font-semibold text-gray-800 leading-tight">Ken.</div>
             <div className="text-[10px] text-gray-400 leading-tight">Super Admin</div>
           </div>
           <ChevronDown size={12} className="text-gray-400" />
